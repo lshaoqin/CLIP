@@ -7,7 +7,7 @@ import helpers
 app = FastAPI()
 connect_to_milvus()
 
-model, device = helpers.instantiate_model()
+model, preprocess, device = helpers.instantiate_model()
 
 @app.get("/")
 def read_root():
@@ -59,7 +59,7 @@ async def upsert_images(collection: str, files: List[UploadFile]):
                 buffer.write(await file.read())
             file_paths.append(file_path)
 
-        embeddings = helpers.generate_image_embeddings(file_paths, model, device)
+        embeddings = helpers.generate_image_embeddings(file_paths, model, preprocess, device)
 
         entities = generate_entities(embeddings, [file.filename for file in files])
         result = upsert_milvus(entities, collection)

@@ -3,3 +3,7 @@ regex
 tqdm
 torch
 torchvision
+pymilvus
+fastapi
+uvicorn
+python-multipart
