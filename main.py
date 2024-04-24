@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile
 from milvus_utils import connect_to_milvus, create_milvus_collection, upsert_milvus, generate_entities, create_milvus_index, query_milvus, check_collection_exists, drop_milvus_collection
 from typing import List
 import helpers
+import base64
+import asyncio
 
 # To start, run uvicorn main:app --reload
 app = FastAPI()
@@ -14,7 +16,7 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/{collection}/create")
-async def create_collection(collection: str, embeddings_len: int = 1024, labels_len: int = 5000):
+async def create_collection(collection: str, embeddings_len: int = 512, labels_len: int = 5000):
     try:
         create_milvus_collection(collection, embeddings_len, labels_len)
     except Exception as e:
@@ -33,7 +35,7 @@ async def drop_collection(collection: str):
 async def upsert_txt(collection: str, inputs: List[str]):
     try:
         if not check_collection_exists(collection):
-            return {"error": "Collection does not exist."}
+            create_milvus_collection(collection, 512, 5000)
         
         embeddings = helpers.generate_text_embeddings(inputs, model, device)
 
@@ -49,7 +51,7 @@ async def upsert_txt(collection: str, inputs: List[str]):
 async def upsert_images(collection: str, files: List[UploadFile]):
     try:
         if not check_collection_exists(collection):
-            return {"error": "Collection does not exist."}
+            create_milvus_collection(collection, 512, 5000)
         
          # Save uploaded files to disk
         file_paths = []
@@ -83,18 +85,35 @@ async def create_index(collection: str):
     return {"result": "Index created."}
 
 @app.post("/{collection}/query")
-async def query(collection: str, text: str):
+async def query(collection: str, query: str):
     try:
         if not check_collection_exists(collection):
             return {"error": "Collection does not exist."}
 
-        embeddings = helpers.generate_text_embeddings([text], model, device)
+        embeddings = helpers.generate_text_embeddings([query], model, device)
         embeddings = embeddings.numpy()
         if len(embeddings[0].shape) == 1:
             embeddings = embeddings[0].reshape(1, -1)
-        result = query_milvus(collection, embeddings, "embeddings", {"metric_type": "L2", "params": {"nprobe": 10}})
+        results = query_milvus(collection, embeddings, "embeddings", {"metric_type": "L2", "params": {"nprobe": 10}})
+
+        # for result in results:
+        #     result["labels"] = result["labels"].decode("utf-8")
+        #     if result["labels"].endswith(".jpg"):
+        #         with open(f"./.assets/test_images/{result['labels']}", "rb") as image_file:
+        #             encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+        #         result["labels"] = encoded_string
+        #         result["isImage"] = True
+        #     else:
+        #         result["isImage"] = False
 
     except Exception as e:
         return {"error": str(e)}
 
-    return {"result": str(result)}
+    return {"result": str(results)}
+
+async def main():
+    await drop_collection("demo")
+    await create_collection("demo")
+
+if __name__ == '__main__':
+    asyncio.run(main())

@@ -31,7 +31,6 @@ def generate_image_embeddings(filepaths, model, preprocess, device):
         image = preprocess(Image.open(filepath)).unsqueeze(0).to(device)
 
         with torch.no_grad():
-            embeddings.append(model.encode_image(image))
-
+            embeddings.append(model.encode_image(image).flatten().numpy())
     return embeddings
 
