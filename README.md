@@ -1,3 +1,20 @@
+# Quickstart
+This is an API of CLIP which connects to a Milvus database and stores/queries embeddings to find similar texts/images.
+
+To run the API, install the dependencies by running the following command:
+
+```bash
+pip install -r requirements.txt
+```
+
+Then run the following command to start the API:
+
+```bash
+uvicorn main:app --reload
+```
+
+
+
 # CLIP
 
 [[Blog]](https://openai.com/blog/clip/) [[Paper]](https://arxiv.org/abs/2103.00020) [[Model Card]](model-card.md) [[Colab]](https://colab.research.google.com/github/openai/clip/blob/master/notebooks/Interacting_with_CLIP.ipynb)
